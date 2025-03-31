@@ -1,18 +1,47 @@
-﻿using Permission.Domain.Entities;
+﻿using Nest;
+using Permission.Domain.Entities;
 using Permission.Domain.Ports;
+using System.Security;
 
 namespace Permission.Infrastructure.Adapters
 {
     public class PermissionElasticRepository : IPermissionElasticRepository
     {
-        public Task IndexPermissionAsync(PermissionEntity permission)
+        private readonly IElasticClient _elasticClient;
+
+        public PermissionElasticRepository(IElasticClient elasticClient)
         {
-            throw new NotImplementedException();
+            _elasticClient = elasticClient ?? throw new ArgumentNullException(nameof(elasticClient));
         }
 
-        public Task IndexPermissionTypeAsync(PermissionTypeEntity permission)
+        public async Task IndexPermissionAsync(PermissionEntity permission)
         {
-            throw new NotImplementedException();
+            var indexExists = await _elasticClient.Indices.ExistsAsync("permissions");
+            if (!indexExists.Exists)
+            {
+                await _elasticClient.Indices.CreateAsync("permissions", c => c.Map<PermissionEntity>(m => m.AutoMap()));
+            }
+
+            var response = await _elasticClient.IndexDocumentAsync(permission);
+            if (!response.IsValid)
+            {
+                throw new Exception($"Failed to index permission: {response.DebugInformation}");
+            }
+        }
+
+        public async Task IndexPermissionTypeAsync(PermissionTypeEntity permissionType)
+        {
+            var indexExists = await _elasticClient.Indices.ExistsAsync("permissions");
+            if (!indexExists.Exists)
+            {
+                await _elasticClient.Indices.CreateAsync("permissions", c => c.Map<PermissionEntity>(m => m.AutoMap()));
+            }
+
+            var response = await _elasticClient.IndexDocumentAsync(permissionType);
+            if (!response.IsValid)
+            {
+                throw new Exception($"Failed to index permission: {response.DebugInformation}");
+            }
         }
     }
 }
