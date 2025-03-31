@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Nest;
 using Confluent.Kafka;
-using Serilog;
 using Permission.Infrastructure.Adapters;
 using Permission.Infrastructure.Context;
 using Permission.Infrastructure.Extensions;
@@ -41,6 +40,11 @@ if (!string.IsNullOrWhiteSpace(elasticUsername) && !string.IsNullOrWhiteSpace(el
 
 builder.Services.AddSingleton<IElasticClient>(new ElasticClient(connectionSettings));
 builder.Services.AddElasticSearch();
+
+var loggerFactory = LoggerFactory.Create(loggingBuilder => loggingBuilder.AddConsole());
+var logger = loggerFactory.CreateLogger("KafkaSetup");
+
+builder.Services.AddKafka(config, logger);
 
 var kafkaConfig = new ProducerConfig
 {

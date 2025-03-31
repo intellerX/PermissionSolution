@@ -1,7 +1,6 @@
 ﻿using Nest;
 using Permission.Domain.Entities;
 using Permission.Domain.Ports;
-using System.Security;
 
 namespace Permission.Infrastructure.Adapters
 {

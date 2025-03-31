@@ -3,8 +3,7 @@ using Newtonsoft.Json;
 using Permission.Domain.Entities;
 using Permission.Domain.Ports;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Permission.Infrastructure.Adapters
 {
@@ -12,14 +11,17 @@ namespace Permission.Infrastructure.Adapters
     {
         private readonly IProducer<Null, string> _producer;
         private readonly string _topic;
+        private readonly ILogger<PermissionKafkaRepository> _logger;
 
-        public PermissionKafkaRepository(IConfiguration configuration)
+        public PermissionKafkaRepository(IConfiguration configuration, ILogger<PermissionKafkaRepository> logger)
         {
+            _logger = logger;
             var bootstrapServers = configuration["Kafka:BootstrapServers"];
             _topic = configuration["Kafka:Topic"];
 
             if (string.IsNullOrEmpty(bootstrapServers) || string.IsNullOrEmpty(_topic))
             {
+                _logger.LogError("Kafka configuration is missing.");
                 throw new InvalidOperationException("Kafka configuration is missing.");
             }
 
@@ -39,15 +41,15 @@ namespace Permission.Infrastructure.Adapters
                 var jsonMessage = JsonConvert.SerializeObject(message);
                 var deliveryReport = await _producer.ProduceAsync(_topic, new Message<Null, string> { Value = jsonMessage });
 
-                Console.WriteLine($"Message delivered to {deliveryReport.TopicPartitionOffset}");
+                _logger.LogInformation("Message delivered to {TopicPartitionOffset}", deliveryReport.TopicPartitionOffset);
             }
             catch (ProduceException<Null, string> ex)
             {
-                Console.WriteLine($"Kafka produce error: {ex.Error.Reason}");
+                _logger.LogError(ex, "Kafka produce error: {ErrorReason}", ex.Error.Reason);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unexpected error while producing message: {ex.Message}");
+                _logger.LogError(ex, "Unexpected error while producing message: {ErrorMessage}", ex.Message);
             }
         }
     }

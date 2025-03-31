@@ -1,8 +1,10 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
 var kafka = builder.AddContainer("kafka", "confluentinc/cp-kafka:7.3.2")
-    .WithEnvironment("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://kafka:9092")
     .WithEnvironment("KAFKA_ZOOKEEPER_CONNECT", "zookeeper:2181")
+    .WithEnvironment("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:9092") 
+    .WithEnvironment("KAFKA_LISTENERS", "PLAINTEXT://0.0.0.0:9092")
+    .WithEnvironment("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
     .WithEndpoint(9092, targetPort: 9092);
 
 var zookeeper = builder.AddContainer("zookeeper", "confluentinc/cp-zookeeper:7.3.2")
